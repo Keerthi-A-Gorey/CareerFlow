@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes.js";
+import applicationRoutes from "./routes/application.routes.js";
 
 const app = express();
 
@@ -18,5 +19,7 @@ app.use("/auth", authRoutes);
 app.get("/", (req, res) => {
   res.send("CareerFlow API running 🚀");
 });
+
+app.use("/applications", applicationRoutes);
 
 export default app;
