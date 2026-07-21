@@ -35,6 +35,37 @@ CareerFlow is a full-stack web application designed to help users manage and tra
 - Node-cron (for scheduled reminders)
 
 ---
+# Application Preview
+
+## Login / Signup
+
+![Login / Signup](docs/Login.png)
+
+---
+
+## Dashboard
+
+![Dashboard](docs/Dashboard.png)
+
+---
+
+## Resume Management
+
+![Resume Management](docs/Resumes.png)
+
+---
+
+## Analytics
+
+![Analytics](docs/Analytics.png)
+
+---
+
+# System Architecture
+
+![System Architecture](docs/archi.png)
+
+---
 
 ## API Endpoints
 
