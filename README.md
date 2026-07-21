@@ -39,31 +39,31 @@ CareerFlow is a full-stack web application designed to help users manage and tra
 
 ## Login / Signup
 
-![Login / Signup](docs/Login.png)
+![Login / Signup](Docs/Login.png)
 
 ---
 
 ## Dashboard
 
-![Dashboard](docs/Dashboard.png)
+![Dashboard](Docs/Dashboard.png)
 
 ---
 
 ## Resume Management
 
-![Resume Management](docs/Resumes.png)
+![Resume Management](Docs/Resumes.png)
 
 ---
 
 ## Analytics
 
-![Analytics](docs/Analytics.png)
+![Analytics](Docs/Analytics.png)
 
 ---
 
 # System Architecture
 
-![System Architecture](docs/archi.png)
+![System Architecture](Docs/archi.png)
 
 ---
 
