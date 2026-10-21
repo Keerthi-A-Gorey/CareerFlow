@@ -15,8 +15,30 @@ const resumeVersionSchema = new mongoose.Schema(
       trim: true
     },
 
+    description: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+
     fileUrl: {
-      type: String // later when we add S3 uploads
+      type: String,
+      default: ""
+    },
+
+    fileName: {
+      type: String,
+      default: ""
+    },
+
+    fileType: {
+      type: String,
+      default: ""
+    },
+
+    fileSize: {
+      type: Number,
+      default: 0
     }
   },
   { timestamps: true }

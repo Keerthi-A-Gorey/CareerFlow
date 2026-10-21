@@ -69,7 +69,8 @@ export const refreshAccessToken = (req, res) => {
   if (!token) return res.status(401).json({ message: "No refresh token" });
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+    const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+    const decoded = jwt.verify(token, secret);
     const newAccessToken = generateAccessToken(decoded.id);
 
     res.json({ accessToken: newAccessToken });

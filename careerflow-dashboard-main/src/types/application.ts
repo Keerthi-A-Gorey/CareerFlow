@@ -17,6 +17,10 @@ export interface ResumeVersion {
   id: string;
   name: string;
   description?: string;
+  fileUrl?: string;
+  fileName?: string;
+  fileType?: string;
+  fileSize?: number;
   createdAt: string;
   applicationsCount: number;
 }
