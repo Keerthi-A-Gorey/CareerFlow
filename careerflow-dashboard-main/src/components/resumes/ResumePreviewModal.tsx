@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -32,24 +32,37 @@ export function ResumePreviewModal({
   const [downloading, setDownloading] = useState(false);
   const [iframeLoaded, setIframeLoaded] = useState(false);
 
+  useEffect(() => {
+    if (open) {
+      setIframeLoaded(false);
+    }
+  }, [open, resume?.id]);
+
   if (!resume) return null;
 
-  const rawFileUrl = resume.fileUrl || '';
-  const fullFileUrl = rawFileUrl.startsWith('http://') || rawFileUrl.startsWith('https://')
-    ? rawFileUrl
-    : `${API_BASE_URL}${rawFileUrl.startsWith('/') ? '' : '/'}${rawFileUrl}`;
+  const base = (API_BASE_URL || '').replace(/\/+$/, '');
+  
+  // Construct the persistent streaming URL from the backend
+  const previewUrl = resume.id
+    ? `${base}/resumes/${resume.id}/file`
+    : (resume.fileUrl?.startsWith('http')
+        ? resume.fileUrl
+        : `${base}${resume.fileUrl?.startsWith('/') ? '' : '/'}${resume.fileUrl || ''}`);
+
+  const hasFile = Boolean(resume.fileName || resume.fileUrl);
 
   const isPdf =
-    rawFileUrl.toLowerCase().endsWith('.pdf') ||
+    resume.fileName?.toLowerCase().endsWith('.pdf') ||
     resume.fileType?.includes('pdf') ||
-    resume.fileName?.toLowerCase().endsWith('.pdf');
+    resume.fileUrl?.toLowerCase().endsWith('.pdf') ||
+    (!resume.fileType?.includes('image') && !resume.fileName?.toLowerCase().match(/\.(png|jpg|jpeg|doc|docx)$/));
 
   const isImage =
-    rawFileUrl.toLowerCase().match(/\.(png|jpg|jpeg|webp|gif)$/) ||
+    resume.fileName?.toLowerCase().match(/\.(png|jpg|jpeg|webp|gif)$/) ||
     resume.fileType?.startsWith('image/');
 
   const isWordDoc =
-    rawFileUrl.toLowerCase().match(/\.(doc|docx)$/) ||
+    resume.fileName?.toLowerCase().match(/\.(doc|docx)$/) ||
     resume.fileType?.includes('word') ||
     resume.fileType?.includes('officedocument');
 
@@ -72,11 +85,8 @@ export function ResumePreviewModal({
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('Download failed, falling back to direct URL', err);
-      // Fallback
-      if (fullFileUrl) {
-        window.open(fullFileUrl, '_blank');
-      }
+      console.error('Download via API failed, opening streaming URL directly', err);
+      window.open(`${base}/resumes/${resume.id}/download`, '_blank');
     } finally {
       setDownloading(false);
     }
@@ -108,12 +118,12 @@ export function ResumePreviewModal({
           </div>
 
           <div className="flex items-center gap-2 mr-6">
-            {resume.fileUrl && (
+            {hasFile && (
               <>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => window.open(fullFileUrl, '_blank')}
+                  onClick={() => window.open(previewUrl, '_blank')}
                   title="Open in new window"
                   className="hidden sm:flex items-center gap-1.5"
                 >
@@ -142,7 +152,7 @@ export function ResumePreviewModal({
 
         {/* Content Body */}
         <div className="flex-1 w-full h-full min-h-0 bg-muted/20 rounded-lg border overflow-hidden mt-3 relative flex flex-col">
-          {!resume.fileUrl ? (
+          {!hasFile ? (
             <div className="flex flex-col items-center justify-center h-full p-8 text-center">
               <AlertCircle className="h-12 w-12 text-muted-foreground mb-3" />
               <h4 className="text-lg font-semibold">No File Attached</h4>
@@ -151,7 +161,7 @@ export function ResumePreviewModal({
               </p>
             </div>
           ) : isPdf ? (
-            <div className="relative w-full h-full">
+            <div className="relative w-full h-full flex flex-col">
               {!iframeLoaded && (
                 <div className="absolute inset-0 flex items-center justify-center bg-background/60 z-10">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -161,16 +171,36 @@ export function ResumePreviewModal({
                 </div>
               )}
               <iframe
-                src={`${fullFileUrl}#toolbar=1`}
-                className="w-full h-full border-0 rounded-md"
+                src={`${previewUrl}#toolbar=1`}
+                className="w-full flex-1 border-0 rounded-md"
                 title={`Preview of ${resume.name}`}
                 onLoad={() => setIframeLoaded(true)}
               />
+              <div className="p-2 border-t bg-muted/30 text-xs text-muted-foreground flex items-center justify-between">
+                <span>Having trouble previewing?</span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => window.open(previewUrl, '_blank')}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Open in new tab
+                  </button>
+                  <span>•</span>
+                  <button
+                    type="button"
+                    onClick={handleDownload}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Download PDF
+                  </button>
+                </div>
+              </div>
             </div>
           ) : isImage ? (
             <div className="flex items-center justify-center h-full p-4 overflow-auto">
               <img
-                src={fullFileUrl}
+                src={previewUrl}
                 alt={resume.name}
                 className="max-h-full max-w-full object-contain rounded-md shadow-sm border"
               />
@@ -190,7 +220,7 @@ export function ResumePreviewModal({
           ) : (
             <div className="relative w-full h-full">
               <iframe
-                src={fullFileUrl}
+                src={previewUrl}
                 className="w-full h-full border-0"
                 title={`Preview of ${resume.name}`}
               />

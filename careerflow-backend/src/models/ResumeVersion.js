@@ -21,6 +21,11 @@ const resumeVersionSchema = new mongoose.Schema(
       default: ""
     },
 
+    fileData: {
+      type: Buffer,
+      select: false // excluded from standard queries for performance
+    },
+
     fileUrl: {
       type: String,
       default: ""
@@ -33,7 +38,7 @@ const resumeVersionSchema = new mongoose.Schema(
 
     fileType: {
       type: String,
-      default: ""
+      default: "application/pdf"
     },
 
     fileSize: {
