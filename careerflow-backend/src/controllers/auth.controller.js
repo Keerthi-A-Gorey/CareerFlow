@@ -5,6 +5,16 @@ import {
   generateRefreshToken
 } from "../utils/token.js";
 
+const getCookieOptions = () => {
+  const isProduction = process.env.NODE_ENV === "production";
+  return {
+    httpOnly: true,
+    sameSite: isProduction ? "none" : "lax",
+    secure: isProduction,
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  };
+};
+
 export const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -19,11 +29,7 @@ export const register = async (req, res) => {
     const refreshToken = generateRefreshToken(user._id);
 
     res
-      .cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        sameSite: "strict",
-        secure: false // true in production (https)
-      })
+      .cookie("refreshToken", refreshToken, getCookieOptions())
       .status(201)
       .json({
         user: { id: user._id, name: user.name, email: user.email },
@@ -50,11 +56,7 @@ export const login = async (req, res) => {
     const refreshToken = generateRefreshToken(user._id);
 
     res
-      .cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        sameSite: "strict",
-        secure: false
-      })
+      .cookie("refreshToken", refreshToken, getCookieOptions())
       .json({
         user: { id: user._id, name: user.name, email: user.email },
         accessToken
@@ -80,7 +82,7 @@ export const refreshAccessToken = (req, res) => {
 };
 
 export const logout = (req, res) => {
-  res.clearCookie("refreshToken").json({ message: "Logged out" });
+  res.clearCookie("refreshToken", getCookieOptions()).json({ message: "Logged out" });
 };
 
 export const getProfile = async (req, res) => {

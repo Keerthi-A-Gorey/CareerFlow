@@ -16,7 +16,7 @@ import {
   AlertCircle,
   FileSpreadsheet
 } from 'lucide-react';
-import api from '@/lib/api';
+import api, { API_BASE_URL } from '@/lib/api';
 
 interface ResumePreviewModalProps {
   resume: ResumeVersion | null;
@@ -37,7 +37,7 @@ export function ResumePreviewModal({
   const rawFileUrl = resume.fileUrl || '';
   const fullFileUrl = rawFileUrl.startsWith('http://') || rawFileUrl.startsWith('https://')
     ? rawFileUrl
-    : `http://localhost:5000${rawFileUrl.startsWith('/') ? '' : '/'}${rawFileUrl}`;
+    : `${API_BASE_URL}${rawFileUrl.startsWith('/') ? '' : '/'}${rawFileUrl}`;
 
   const isPdf =
     rawFileUrl.toLowerCase().endsWith('.pdf') ||
