@@ -185,29 +185,30 @@ export const downloadResume = async (req, res) => {
 
 export const deleteResumeVersion = async (req, res) => {
   try {
-    const used = await Application.findOne({
-      userId: req.user.id,
-      resumeVersionId: req.params.id
-    });
+    const resumeId = req.params.id;
 
-    if (used) {
-      return res
-        .status(400)
-        .json({ message: "Resume version is linked to applications" });
-    }
-
-    const deleted = await ResumeVersion.findOneAndDelete({
-      _id: req.params.id,
+    const resume = await ResumeVersion.findOne({
+      _id: resumeId,
       userId: req.user.id
     });
 
-    if (!deleted)
+    if (!resume) {
       return res.status(404).json({ message: "Resume version not found" });
+    }
+
+    // Unlink any applications that were using this resume version
+    await Application.updateMany(
+      { userId: req.user.id, resumeVersionId: resumeId },
+      { $set: { resumeVersionId: null } }
+    );
+
+    // Delete from MongoDB
+    await ResumeVersion.findByIdAndDelete(resumeId);
 
     // Clean up local disk file if any
-    if (deleted.fileUrl && deleted.fileUrl.startsWith("/uploads/")) {
+    if (resume.fileUrl && resume.fileUrl.startsWith("/uploads/")) {
       try {
-        const cleanPath = deleted.fileUrl.replace(/^\//, "");
+        const cleanPath = resume.fileUrl.replace(/^\//, "");
         const filePath = path.join(__dirname, "../../", cleanPath);
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
@@ -217,7 +218,7 @@ export const deleteResumeVersion = async (req, res) => {
       }
     }
 
-    res.json({ message: "Resume version deleted" });
+    res.json({ message: "Resume version deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

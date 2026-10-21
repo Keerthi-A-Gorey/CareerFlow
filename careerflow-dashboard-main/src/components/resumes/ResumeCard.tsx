@@ -1,10 +1,20 @@
 import { useState } from 'react';
-import { FileText, Trash2, Calendar, FileCheck, Eye, Paperclip } from 'lucide-react';
+import { FileText, Trash2, Calendar, FileCheck, Eye, Paperclip, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog';
 import { ResumeVersion } from '@/types/application';
 import { useApplications } from '@/contexts/ApplicationContext';
+import { useToast } from '@/hooks/use-toast';
 import { ResumePreviewModal } from './ResumePreviewModal';
 
 interface ResumeCardProps {
@@ -13,7 +23,31 @@ interface ResumeCardProps {
 
 export function ResumeCard({ resume }: ResumeCardProps) {
   const { deleteResumeVersion } = useApplications();
+  const { toast } = useToast();
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true);
+      await deleteResumeVersion(resume.id);
+      setIsConfirmDeleteOpen(false);
+      toast({
+        title: "Resume deleted",
+        description: `"${resume.name}" has been deleted.`
+      });
+    } catch (err: any) {
+      console.error("Failed to delete resume", err);
+      toast({
+        title: "Delete failed",
+        description: err.response?.data?.message || err.message || "Could not delete resume version",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <>
@@ -34,12 +68,12 @@ export function ResumeCard({ resume }: ResumeCardProps) {
             </div>
           </div>
 
-          {/* Action buttons visible on hover */}
+          {/* Action buttons visible on hover (and always accessible on touch devices) */}
           <div className="flex items-center gap-1 shrink-0">
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100 text-muted-foreground hover:text-foreground"
+              className="h-8 w-8 opacity-80 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
               title="Preview Resume"
               onClick={() => setIsPreviewOpen(true)}
             >
@@ -49,9 +83,9 @@ export function ResumeCard({ resume }: ResumeCardProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+              className="h-8 w-8 opacity-80 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
               title="Delete Resume Version"
-              onClick={() => deleteResumeVersion(resume.id)}
+              onClick={() => setIsConfirmDeleteOpen(true)}
             >
               <Trash2 className="h-4 w-4 text-destructive" />
             </Button>
@@ -79,6 +113,37 @@ export function ResumeCard({ resume }: ResumeCardProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Confirmation Dialog for Deletion */}
+      <AlertDialog open={isConfirmDeleteOpen} onOpenChange={setIsConfirmDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Resume Version?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>{resume.name}</strong>?
+              {resume.applicationsCount > 0 ? (
+                <span className="block mt-2 text-amber-600 dark:text-amber-400 font-medium">
+                  Note: This resume is currently linked to {resume.applicationsCount} application{resume.applicationsCount !== 1 ? 's' : ''}. Deleting it will unlink it from them.
+                </span>
+              ) : (
+                <span className="block mt-1">This action cannot be undone.</span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              disabled={isDeleting}
+              onClick={handleDelete}
+              className="gap-2"
+            >
+              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Separate preview pop-up modal */}
       <ResumePreviewModal

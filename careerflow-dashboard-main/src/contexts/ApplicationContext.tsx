@@ -98,7 +98,7 @@ export function ApplicationProvider({ children }: { children: ReactNode }) {
   const deleteResumeVersion = async (id: string) => {
     try {
       await api.delete(`/resumes/${id}`);
-      await fetchResumes();
+      await Promise.all([fetchResumes(), fetchApplications()]);
     } catch (err) {
       console.error("Delete resume failed", err);
       throw err;
