@@ -1,10 +1,20 @@
 import { useState } from "react";
+import axios from "axios";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useApplications } from "@/contexts/ApplicationContext";
+import { useToast } from "@/hooks/use-toast";
+import { AddApplicationData } from "@/types/application";
+
+const applicationSources: Record<string, AddApplicationData["source"]> = {
+  LinkedIn: "linkedin",
+  Referral: "referral",
+  "Career Page": "career_page",
+  Other: "other"
+};
 
 interface AddApplicationModalProps {
   open: boolean;
@@ -13,6 +23,7 @@ interface AddApplicationModalProps {
 
 export function AddApplicationModal({ open, onOpenChange }: AddApplicationModalProps) {
   const { addApplication, resumeVersions } = useApplications();
+  const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     company: "",
@@ -26,21 +37,33 @@ export function AddApplicationModal({ open, onOpenChange }: AddApplicationModalP
 
     if (!formData.company || !formData.role) return;
 
-    await addApplication({
+    const application: AddApplicationData = {
       company: formData.company,
       role: formData.role,
-      source: formData.source,
+      source: applicationSources[formData.source],
       resumeVersionId: formData.resumeVersionId || undefined,
-    } as any);
+    };
 
-    setFormData({
-      company: "",
-      role: "",
-      source: "LinkedIn",
-      resumeVersionId: ""
-    });
+    try {
+      await addApplication(application);
+      setFormData({
+        company: "",
+        role: "",
+        source: "LinkedIn",
+        resumeVersionId: ""
+      });
 
-    onOpenChange(false);
+      onOpenChange(false);
+    } catch (err) {
+      const message = axios.isAxiosError<{ message?: string }>(err)
+        ? err.response?.data.message || err.message
+        : err instanceof Error ? err.message : "Failed to add application";
+      toast({
+        title: "Add application failed",
+        description: message,
+        variant: "destructive"
+      });
+    }
   };
 
   return (

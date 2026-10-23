@@ -8,6 +8,7 @@ const statusConfig: Record<ApplicationStatus, { label: string; className: string
   interview: { label: 'Interview', className: 'bg-chart-1/20 text-chart-1 border-chart-1/30' },
   offer: { label: 'Offer', className: 'bg-emerald-500/20 text-emerald-600 border-emerald-500/30' },
   rejected: { label: 'Rejected', className: 'bg-destructive/20 text-destructive border-destructive/30' },
+  withdrawn: { label: 'Withdrawn', className: 'bg-muted text-muted-foreground border-muted' },
 };
 
 interface StatusBadgeProps {

@@ -107,35 +107,37 @@ cd careerflow
 
 ### 2. Install dependencies
 
+Install the backend and frontend dependencies from the repository root:
+
+```sh
+cd careerflow-backend
+npm install
+cd ../careerflow-dashboard-main
+npm install
+cd ..
+```
+
 ### 3. Setup environment variables
 
-Create a `.env` file in the server directory:
-
-```
-
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_secret_key
-PORT=5000
-
-```
+Create `careerflow-backend/.env` from `careerflow-backend/.env.example` and set
+your MongoDB connection string and JWT secrets. Create
+`careerflow-dashboard-main/.env.local` from
+`careerflow-dashboard-main/.env.example`; set `VITE_API_URL` to the backend URL
+(locally, `http://localhost:5000`).
 
 ### 4. Run the application
 
-Start backend:
-```
-
-cd careerflow-backend/src
+Start the backend in one terminal:
+```sh
+cd careerflow-backend
 npm run dev
-
 ```
 
-Start frontend:
+Start the frontend in another terminal:
+```sh
+cd careerflow-dashboard-main
+npm run dev
 ```
-
-cd careerflow-dashboard-main/src
-npm start
-
-````
 
 ---
 

@@ -63,6 +63,21 @@ const applicationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Normalize casing before validation (e.g. "Oa" -> "OA")
+applicationSchema.pre("validate", function () {
+  if (this.currentStatus && this.currentStatus.toLowerCase() === "oa") {
+    this.currentStatus = "OA";
+  }
+
+  if (Array.isArray(this.statusHistory)) {
+    this.statusHistory.forEach((h) => {
+      if (h && h.status && h.status.toLowerCase() === "oa") {
+        h.status = "OA";
+      }
+    });
+  }
+});
+
 applicationSchema.pre("save", function () {
   this.lastUpdatedAt = new Date();
 

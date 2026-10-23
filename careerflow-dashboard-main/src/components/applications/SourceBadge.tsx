@@ -3,9 +3,8 @@ import { ApplicationSource } from '@/types/application';
 
 const sourceLabels: Record<ApplicationSource, string> = {
   linkedin: 'LinkedIn',
-  indeed: 'Indeed',
-  company_website: 'Company Site',
   referral: 'Referral',
+  career_page: 'Career Page',
   other: 'Other',
 };
 

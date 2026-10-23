@@ -3,15 +3,26 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import api from "@/lib/api";
 
+interface FunnelStageResponse {
+  _id: string;
+  count: number;
+}
+
+interface FunnelChartData {
+  name: string;
+  value: number;
+  fill: string;
+}
+
 export function FunnelChart() {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<FunnelChartData[]>([]);
 
   useEffect(() => {
-    api.get("/analytics/funnel").then((res) => {
+    api.get<FunnelStageResponse[]>("/analytics/funnel").then((res) => {
       const stages = ["Applied", "OA", "Interview", "Offer"];
 
       const formatted = stages.map((stage, idx) => {
-        const found = res.data.find((d: any) => d._id === stage);
+        const found = res.data.find((item) => item._id === stage);
         return {
           name: stage,
           value: found ? found.count : 0,

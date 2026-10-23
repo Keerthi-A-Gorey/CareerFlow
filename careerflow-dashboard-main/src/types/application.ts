@@ -1,6 +1,13 @@
-export type ApplicationStatus = 'applied' | 'oa' | 'interview' | 'offer' | 'rejected';
+export type ApplicationStatus = 'applied' | 'oa' | 'interview' | 'offer' | 'rejected' | 'withdrawn';
 
-export type ApplicationSource = 'linkedin' | 'indeed' | 'company_website' | 'referral' | 'other';
+export type ApplicationSource = 'linkedin' | 'referral' | 'career_page' | 'other';
+
+export interface AddApplicationData {
+  company: string;
+  role: string;
+  source: ApplicationSource;
+  resumeVersionId?: string;
+}
 
 export interface Application {
   id: string;

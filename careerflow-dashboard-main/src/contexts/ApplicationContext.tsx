@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Application, ResumeVersion } from '@/types/application';
+import { AddApplicationData, Application, ApplicationSource, ApplicationStatus, ResumeVersion } from '@/types/application';
 import { useEffect } from "react";
 import api from "@/lib/api";
 
@@ -9,10 +9,51 @@ interface AddResumeData {
   file?: File | null;
 }
 
+type BackendApplicationStatus = "Applied" | "OA" | "Interview" | "Offer" | "Rejected" | "Withdrawn";
+type BackendApplicationSource = "LinkedIn" | "Referral" | "Career Page" | "Other";
+
+interface ApplicationResponse {
+  _id: string;
+  company: string;
+  role: string;
+  currentStatus: BackendApplicationStatus;
+  source: BackendApplicationSource;
+  resumeVersionId?: { label: string } | null;
+  appliedAt: string;
+}
+
+interface ResumeVersionResponse {
+  _id: string;
+  label: string;
+  description?: string;
+  fileUrl?: string;
+  fileName?: string;
+  fileType?: string;
+  fileSize?: number;
+  createdAt: string;
+  applicationsCount?: number;
+}
+
+const statusFromBackend: Record<BackendApplicationStatus, ApplicationStatus> = {
+  Applied: "applied",
+  OA: "oa",
+  Interview: "interview",
+  Offer: "offer",
+  Rejected: "rejected",
+  Withdrawn: "withdrawn"
+};
+
+const sourceFromBackend: Record<BackendApplicationSource, ApplicationSource> = {
+  LinkedIn: "linkedin",
+  Referral: "referral",
+  "Career Page": "career_page",
+  Other: "other"
+};
+
 interface ApplicationContextType {
   applications: Application[];
   resumeVersions: ResumeVersion[];
-  addApplication: (app: any) => Promise<void>;
+  addApplication: (app: AddApplicationData) => Promise<void>;
   updateApplication: (id: string, app: Partial<Application>) => Promise<void>;
   deleteApplication: (id: string) => Promise<void>;
   addResumeVersion: (resume: AddResumeData) => Promise<void>;
@@ -31,13 +72,15 @@ export function ApplicationProvider({ children }: { children: ReactNode }) {
     fetchResumes();
   }, []);
 
-  const addApplication = async (app: any) => {
+  const addApplication = async (app: AddApplicationData) => {
     try {
       await api.post("/applications", {
         company: app.company,
         role: app.role,
         type: "Intern",
-        source: app.source,
+        source: app.source === "linkedin" ? "LinkedIn"
+          : app.source === "career_page" ? "Career Page"
+            : app.source === "referral" ? "Referral" : "Other",
         resumeVersionId: app.resumeVersionId || null,
         notes: ""
       });
@@ -45,19 +88,27 @@ export function ApplicationProvider({ children }: { children: ReactNode }) {
       await fetchApplications();
     } catch (err) {
       console.error("Add application failed", err);
+      throw err;
     }
+  };
+
+  const formatStatusForBackend = (status: string): string => {
+    const lower = status.toLowerCase();
+    if (lower === 'oa') return 'OA';
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
   };
 
   const updateApplication = async (id: string, updates: Partial<Application>) => {
     try {
       if (updates.status) {
         await api.patch(`/applications/${id}/status`, {
-          status: updates.status.charAt(0).toUpperCase() + updates.status.slice(1)
+          status: formatStatusForBackend(updates.status)
         });
       }
       await fetchApplications();
     } catch (err) {
       console.error("Update failed", err);
+      throw err;
     }
   };
 
@@ -67,6 +118,7 @@ export function ApplicationProvider({ children }: { children: ReactNode }) {
       await fetchApplications();
     } catch (err) {
       console.error("Delete failed", err);
+      throw err;
     }
   };
 
@@ -107,16 +159,16 @@ export function ApplicationProvider({ children }: { children: ReactNode }) {
 
   const fetchApplications = async () => {
     try {
-      const res = await api.get("/applications");
+      const res = await api.get<ApplicationResponse[]>("/applications");
       setApplications(
-        res.data.map((a: any) => ({
-          id: a._id,
-          company: a.company,
-          role: a.role,
-          status: a.currentStatus.toLowerCase(),
-          source: a.source.toLowerCase(),
-          resumeVersion: a.resumeVersionId?.label || "",
-          appliedDate: a.appliedAt
+        res.data.map((application) => ({
+          id: application._id,
+          company: application.company,
+          role: application.role,
+          status: statusFromBackend[application.currentStatus],
+          source: sourceFromBackend[application.source],
+          resumeVersion: application.resumeVersionId?.label || "",
+          appliedDate: application.appliedAt
         }))
       );
     } catch (err) {
@@ -126,18 +178,18 @@ export function ApplicationProvider({ children }: { children: ReactNode }) {
 
   const fetchResumes = async () => {
     try {
-      const res = await api.get("/resumes");
+      const res = await api.get<ResumeVersionResponse[]>("/resumes");
       setResumeVersions(
-        res.data.map((r: any) => ({
-          id: r._id,
-          name: r.label,
-          description: r.description || "",
-          fileUrl: r.fileUrl || "",
-          fileName: r.fileName || "",
-          fileType: r.fileType || "",
-          fileSize: r.fileSize || 0,
-          createdAt: r.createdAt,
-          applicationsCount: r.applicationsCount || 0
+        res.data.map((resume) => ({
+          id: resume._id,
+          name: resume.label,
+          description: resume.description || "",
+          fileUrl: resume.fileUrl || "",
+          fileName: resume.fileName || "",
+          fileType: resume.fileType || "",
+          fileSize: resume.fileSize || 0,
+          createdAt: resume.createdAt,
+          applicationsCount: resume.applicationsCount || 0
         }))
       );
     } catch (err) {

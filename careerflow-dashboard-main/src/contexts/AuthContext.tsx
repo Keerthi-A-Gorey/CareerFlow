@@ -9,23 +9,37 @@ type AuthContextType = {
   register: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
+  user: UserProfile | null;
 };
+
+interface UserProfile {
+  id?: string;
+  _id?: string;
+  name: string;
+  email: string;
+}
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(!!getAccessToken());
+  const [user, setUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
-  const token = getAccessToken();
-  if (token) setIsAuthenticated(true);
-}, []);
+    const token = getAccessToken();
+    if (!token) return;
+
+    api.get<UserProfile>("/auth/profile")
+      .then((res) => setUser(res.data))
+      .catch((err) => console.error("Failed to load profile:", err));
+  }, []);
 
   const login = async (email: string, password: string) => {
     try {
-      const res = await api.post("/auth/login", { email, password });
+      const res = await api.post<{ accessToken: string; user: UserProfile }>("/auth/login", { email, password });
 
       setAccessToken(res.data.accessToken);
+      setUser(res.data.user);
       setIsAuthenticated(true);
       return true;
     } catch (err) {
@@ -36,9 +50,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const register = async (name: string, email: string, password: string) => {
     try {
-      const res = await api.post("/auth/register", { name, email, password });
+      const res = await api.post<{ accessToken: string; user: UserProfile }>("/auth/register", { name, email, password });
 
       setAccessToken(res.data.accessToken);
+      setUser(res.data.user);
       setIsAuthenticated(true);
       return true;
     } catch (err) {
@@ -49,12 +64,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = () => {
     setAccessToken(null);
+    setUser(null);
     setIsAuthenticated(false);
   };
 
   return (
     <AuthContext.Provider
-      value={{ login, register, logout, isAuthenticated }}
+      value={{ login, register, logout, isAuthenticated, user }}
     >
       {children}
     </AuthContext.Provider>

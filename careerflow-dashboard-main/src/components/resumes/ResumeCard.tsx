@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import axios from 'axios';
 import { FileText, Trash2, Calendar, FileCheck, Eye, Paperclip, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,11 +38,14 @@ export function ResumeCard({ resume }: ResumeCardProps) {
         title: "Resume deleted",
         description: `"${resume.name}" has been deleted.`
       });
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to delete resume", err);
+      const message = axios.isAxiosError<{ message?: string }>(err)
+        ? err.response?.data.message || err.message
+        : err instanceof Error ? err.message : "Could not delete resume version";
       toast({
         title: "Delete failed",
-        description: err.response?.data?.message || err.message || "Could not delete resume version",
+        description: message,
         variant: "destructive"
       });
     } finally {

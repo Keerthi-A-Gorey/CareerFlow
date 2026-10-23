@@ -1,5 +1,18 @@
 import Application from "../models/Application.js";
 
+const normalizeStatus = (status) => {
+  if (!status) return status;
+  const statusMap = {
+    applied: "Applied",
+    oa: "OA",
+    interview: "Interview",
+    offer: "Offer",
+    rejected: "Rejected",
+    withdrawn: "Withdrawn"
+  };
+  return statusMap[status.toLowerCase()] || status;
+};
+
 export const createApplication = async (req, res) => {
   try {
     const {
@@ -30,6 +43,7 @@ export const createApplication = async (req, res) => {
 export const getApplications = async (req, res) => {
   try {
     const apps = await Application.find({ userId: req.user.id })
+      .populate("resumeVersionId", "label")
       .sort({ appliedAt: -1 });
 
     res.json(apps);
@@ -43,7 +57,7 @@ export const getApplicationById = async (req, res) => {
     const app = await Application.findOne({
       _id: req.params.id,
       userId: req.user.id
-    });
+    }).populate("resumeVersionId", "label");
 
     if (!app)
       return res.status(404).json({ message: "Application not found" });
@@ -56,9 +70,18 @@ export const getApplicationById = async (req, res) => {
 
 export const updateApplication = async (req, res) => {
   try {
+    const updateData = { ...req.body };
+    if (updateData.status) {
+      updateData.currentStatus = normalizeStatus(updateData.status);
+      delete updateData.status;
+    }
+    if (updateData.currentStatus) {
+      updateData.currentStatus = normalizeStatus(updateData.currentStatus);
+    }
+
     const updated = await Application.findOneAndUpdate(
       { _id: req.params.id, userId: req.user.id },
-      req.body,
+      updateData,
       { new: true }
     );
 
@@ -99,9 +122,11 @@ export const updateStatus = async (req, res) => {
     if (!app)
       return res.status(404).json({ message: "Application not found" });
 
-    app.currentStatus = status;
+    const normalized = normalizeStatus(status);
+
+    app.currentStatus = normalized;
     app.statusHistory.push({
-      status,
+      status: normalized,
       changedAt: new Date()
     });
 

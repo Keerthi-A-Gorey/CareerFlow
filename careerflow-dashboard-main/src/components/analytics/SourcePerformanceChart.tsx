@@ -11,16 +11,26 @@ const COLORS = [
   "hsl(var(--chart-5))",
 ];
 
+interface SourcePerformanceResponse {
+  _id: string;
+  total: number;
+}
+
+interface SourcePerformanceData {
+  name: string;
+  value: number;
+}
+
 export function SourcePerformanceChart() {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<SourcePerformanceData[]>([]);
 
   useEffect(() => {
     api
-      .get("/analytics/source-performance")
+      .get<SourcePerformanceResponse[]>("/analytics/source-performance")
       .then((res) => {
-        const formatted = res.data.map((d: any) => ({
-          name: d._id, // LinkedIn / Referral / Career Page
-          value: d.total,
+        const formatted = res.data.map((item) => ({
+          name: item._id,
+          value: item.total,
         }));
         setData(formatted);
       })

@@ -3,18 +3,32 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import api from "@/lib/api";
 
+interface ResumePerformanceResponse {
+  resumeLabel: string;
+  total: number;
+  interviews: number;
+  offers: number;
+}
+
+interface ResumePerformanceData {
+  name: string;
+  applications: number;
+  interviews: number;
+  offers: number;
+}
+
 export function ResumePerformanceChart() {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<ResumePerformanceData[]>([]);
 
   useEffect(() => {
     api
-      .get("/analytics/resume-performance")
+      .get<ResumePerformanceResponse[]>("/analytics/resume-performance")
       .then((res) => {
-        const formatted = res.data.map((d: any) => ({
-          name: d.resumeLabel,
-          applications: d.total,
-          interviews: d.interviews,
-          offers: d.offers,
+        const formatted = res.data.map((item) => ({
+          name: item.resumeLabel,
+          applications: item.total,
+          interviews: item.interviews,
+          offers: item.offers,
         }));
         setData(formatted);
       })

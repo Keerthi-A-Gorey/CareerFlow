@@ -1,24 +1,59 @@
 import { useState } from 'react';
+import axios from 'axios';
 import { Trash2, MoreHorizontal } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useApplications } from '@/contexts/ApplicationContext';
+import { useToast } from '@/hooks/use-toast';
 import { StatusBadge } from './StatusBadge';
 import { SourceBadge } from './SourceBadge';
 import { ApplicationStatus } from '@/types/application';
 
 export function ApplicationsTable() {
   const { applications, updateApplication, deleteApplication } = useApplications();
+  const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const filteredApplications = statusFilter === 'all' 
     ? applications 
     : applications.filter(app => app.status === statusFilter);
 
-  const handleStatusChange = (id: string, newStatus: ApplicationStatus) => {
-    updateApplication(id, { status: newStatus });
+  const handleStatusChange = async (id: string, newStatus: ApplicationStatus) => {
+    try {
+      await updateApplication(id, { status: newStatus });
+      const label = newStatus === 'oa' ? 'OA' : newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+      toast({
+        title: "Status updated",
+        description: `Application moved to ${label}.`
+      });
+    } catch (err) {
+      const message = axios.isAxiosError<{ message?: string }>(err)
+        ? err.response?.data.message || err.message
+        : err instanceof Error ? err.message : "Failed to update status";
+      toast({
+        title: "Update failed",
+        description: message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteApplication(id);
+      toast({ title: "Application deleted" });
+    } catch (err) {
+      const message = axios.isAxiosError<{ message?: string }>(err)
+        ? err.response?.data.message || err.message
+        : err instanceof Error ? err.message : "Failed to delete application";
+      toast({
+        title: "Delete failed",
+        description: message,
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -35,6 +70,7 @@ export function ApplicationsTable() {
             <SelectItem value="interview">Interview</SelectItem>
             <SelectItem value="offer">Offer</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
+            <SelectItem value="withdrawn">Withdrawn</SelectItem>
           </SelectContent>
         </Select>
         <span className="text-sm text-muted-foreground">
@@ -92,8 +128,11 @@ export function ApplicationsTable() {
                       <DropdownMenuItem onClick={() => handleStatusChange(app.id, 'rejected')}>
                         Mark as Rejected
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleStatusChange(app.id, 'withdrawn')}>
+                        Mark as Withdrawn
+                      </DropdownMenuItem>
                       <DropdownMenuItem 
-                        onClick={() => deleteApplication(app.id)}
+                        onClick={() => handleDelete(app.id)}
                         className="text-destructive focus:text-destructive"
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
